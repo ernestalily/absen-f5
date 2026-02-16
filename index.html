@@ -542,7 +542,7 @@
 
             <div id="errorMessage" class="error-message"></div>
 
-            <form id="loginForm" onsubmit="handleLogin(event)">
+           <form id="loginForm">
                 <div class="form-group">
                     <label for="email">Email / Username</label>
                     <input type="text" id="email" required placeholder="Masukkan email atau username">
@@ -655,29 +655,30 @@
 
         <script>
             const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx73CltEnUam_9YqeTsSj8Ax9qyx6EkJHVKLazoUqzNG3SqWIr2Tg_57O1dl_PD1sYZSg/exec";
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    handleLogin(e);
+});
+
         // ===== FUNGSI LOGIN =====
-        function handleLogin(event) {
-            event.preventDefault();
-            
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const errorMessage = document.getElementById('errorMessage');
+       function handleLogin(event) {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const errorMessage = document.getElementById('errorMessage');
 
-            if (email === CREDENTIALS.email && password === CREDENTIALS.password) {
-                localStorage.setItem('isLoggedIn', 'true');
-                localStorage.setItem('loggedUser', email);
-                showAttendancePage();
-                showToast('✅ Login berhasil! Selamat datang.', 'success');
-            } else {
-                errorMessage.textContent = '❌ Email atau password salah!';
-                errorMessage.style.display = 'block';
-                
-                setTimeout(() => {
-                    errorMessage.style.display = 'none';
-                }, 3000);
-            }
-        }
-
+    if (
+        email.toLowerCase() === CREDENTIALS.email.toLowerCase() &&
+        password === CREDENTIALS.password
+    ) {
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('loggedUser', email);
+        showAttendancePage();
+        showToast('✅ Login berhasil!', 'success');
+    } else {
+        errorMessage.textContent = '❌ Email atau password salah!';
+        errorMessage.style.display = 'block';
+    }
+}
         // ===== FUNGSI LOGOUT =====
         function logout() {
             if (confirm('Apakah Anda yakin ingin keluar?')) {
