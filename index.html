@@ -478,24 +478,6 @@
             font-weight: 600;
         }
 
-        .history-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        .history-table th,
-        .history-table td {
-            padding: 12px;
-            text-align: left;
-            border: 1px solid #e9ecef;
-        }
-
-        .history-table th {
-            background: #f8f9fa;
-            font-weight: 600;
-        }
-
         /* Responsive Design */
         @media (max-width: 768px) {
             .header {
@@ -653,10 +635,9 @@
 
     <script>
         // ===== KONFIGURASI LOGIN =====
-        // Anda bisa mengubah email dan password di sini
         const CREDENTIALS = {
             email: "takenbyf5@gmail.com",
-            password: "SekretarisF5"
+            password: "PengurusF5"
         };
 
         // ===== DATA SISWA =====
@@ -680,17 +661,12 @@
             const password = document.getElementById('password').value;
             const errorMessage = document.getElementById('errorMessage');
 
-            // Validasi kredensial
             if (email === CREDENTIALS.email && password === CREDENTIALS.password) {
-                // Simpan status login
                 localStorage.setItem('isLoggedIn', 'true');
                 localStorage.setItem('loggedUser', email);
-                
-                // Tampilkan halaman absensi
                 showAttendancePage();
                 showToast('✅ Login berhasil! Selamat datang.', 'success');
             } else {
-                // Tampilkan error
                 errorMessage.textContent = '❌ Email atau password salah!';
                 errorMessage.style.display = 'block';
                 
@@ -746,11 +722,9 @@
         // ===== FUNGSI GENERATE TABEL =====
         function generateStudentTable() {
             const tableBody = document.getElementById('studentTable');
-            tableBody.innerHTML = ''; // Clear existing table
+            tableBody.innerHTML = '';
             
             const todayDate = getTodayDate();
-            
-            // Ambil data absensi dari LocalStorage
             const savedData = localStorage.getItem(`attendance_${todayDate}`);
             let attendanceData = {};
             
@@ -765,7 +739,7 @@
 
             students.forEach((name, index) => {
                 const row = document.createElement('tr');
-                const status = attendanceData[name] || 'H'; // Default Hadir
+                const status = attendanceData[name] || 'H';
                 
                 row.innerHTML = `
                     <td>${index + 1}</td>
@@ -790,11 +764,8 @@
         // ===== FUNGSI UPDATE STATUS =====
         function updateStatus(select) {
             const value = select.value;
-            
-            // Hapus semua class
             select.classList.remove('hadir', 'izin', 'sakit', 'alpha');
             
-            // Tambah class sesuai status
             if (value === 'H') select.classList.add('hadir');
             else if (value === 'I') select.classList.add('izin');
             else if (value === 'S') select.classList.add('sakit');
@@ -852,7 +823,7 @@
             localStorage.setItem('attendance_history', JSON.stringify(history));
         }
 
-        // ===== FUNGSI RESET KE DEFAULT (HADIR SEMUA) =====
+        // ===== FUNGSI RESET =====
         function resetToDefault() {
             if (confirm('Reset absensi hari ini ke HADIR SEMUA?')) {
                 const selects = document.querySelectorAll('.status-select');
@@ -868,7 +839,7 @@
             }
         }
 
-        // ===== FUNGSI EXPORT KE EXCEL =====
+        // ===== FUNGSI EXPORT EXCEL =====
         function exportToExcel() {
             const history = localStorage.getItem('attendance_history');
             
@@ -979,7 +950,6 @@
 
         // ===== INISIALISASI =====
         window.onload = function() {
-            // Cek status login
             const isLoggedIn = localStorage.getItem('isLoggedIn');
             
             if (isLoggedIn === 'true') {
