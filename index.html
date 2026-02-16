@@ -653,6 +653,8 @@
             "Steven Fernando Wijaya", "Timoses Manuel", "Veronica Kerenza", "Wesley Rafa Natanael"
         ];
 
+        <script>
+            const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx73CltEnUam_9YqeTsSj8Ax9qyx6EkJHVKLazoUqzNG3SqWIr2Tg_57O1dl_PD1sYZSg/exec";
         // ===== FUNGSI LOGIN =====
         function handleLogin(event) {
             event.preventDefault();
@@ -794,26 +796,36 @@
         }
 
         // ===== FUNGSI SIMPAN ABSENSI =====
-        function saveAttendance() {
-            const todayDate = getTodayDate();
-            const attendanceData = {};
-            const selects = document.querySelectorAll('.status-select');
+       function saveAttendance() {
+    const todayDate = getTodayDate();
+    const attendanceData = {};
+    const selects = document.querySelectorAll('.status-select');
 
-            selects.forEach(select => {
-                const studentName = select.dataset.student;
-                const status = select.value;
-                attendanceData[studentName] = status;
-            });
+    selects.forEach(select => {
+        const studentName = select.dataset.student;
+        const status = select.value;
+        attendanceData[studentName] = status;
 
-            // Simpan data harian
-            localStorage.setItem(`attendance_${todayDate}`, JSON.stringify(attendanceData));
-            
-            // Simpan ke master history
-            saveToHistory(todayDate, attendanceData);
-            
-            showToast('✅ Data absensi berhasil disimpan!', 'success');
-        }
+        // ===== KIRIM KE GOOGLE SHEETS =====
+        fetch(SCRIPT_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                tanggal: todayDate,
+                nama: studentName,
+                status: status
+            }),
+            headers: {
+                "Content-Type": "application/json"
+            }
+        });
+    });
 
+    // Tetap simpan lokal
+    localStorage.setItem(`attendance_${todayDate}`, JSON.stringify(attendanceData));
+    saveToHistory(todayDate, attendanceData);
+
+    showToast('☁️ Data tersimpan ke Cloud & Lokal!', 'success');
+}
         // ===== FUNGSI SIMPAN KE HISTORY =====
         function saveToHistory(date, data) {
             let history = localStorage.getItem('attendance_history');
