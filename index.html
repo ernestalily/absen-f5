@@ -953,10 +953,6 @@
 
         // ===== FUNGSI SIMPAN KE GOOGLE SHEETS (MULTI-USER) =====
         async function saveAttendance() {
-            if (!SCRIPT_URL || SCRIPT_URL === "") {
-    showToast('⚠️ URL Google Apps Script belum diisi!', 'error');
-    return;
-}
             const btnSave = document.getElementById('btnSave');
             const originalText = btnSave.innerHTML;
             
