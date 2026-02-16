@@ -953,11 +953,10 @@
 
         // ===== FUNGSI SIMPAN KE GOOGLE SHEETS (MULTI-USER) =====
         async function saveAttendance() {
-            if (SCRIPT_URL === "https://script.google.com/macros/s/AKfycbwJTuxL7bNxJAzPebcktT7DypWws7rYpXjg1-olFBCAxj-JqYE5AWRzS9KqfSn1cM717g/exec") {
-                showToast('⚠️ Google Apps Script belum dikonfigurasi! Baca PANDUAN-SETUP.txt', 'error');
-                return;
-            }
-
+            if (!SCRIPT_URL || SCRIPT_URL === "") {
+    showToast('⚠️ URL Google Apps Script belum diisi!', 'error');
+    return;
+}
             const btnSave = document.getElementById('btnSave');
             const originalText = btnSave.innerHTML;
             
