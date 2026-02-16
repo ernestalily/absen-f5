@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Absensi Kelas F5</title>
+    <title>Sistem Absensi Kelas F5 - Multi User</title>
     <style>
         /* Reset dan Base Styles */
         * {
@@ -42,7 +42,7 @@
             border-radius: 15px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
             padding: 50px;
-            max-width: 450px;
+            max-width: 500px;
             width: 100%;
         }
 
@@ -73,7 +73,7 @@
             font-weight: 600;
         }
 
-        .form-group input {
+        .form-group input, .form-group select {
             width: 100%;
             padding: 15px;
             border: 2px solid #e9ecef;
@@ -82,7 +82,7 @@
             transition: all 0.3s;
         }
 
-        .form-group input:focus {
+        .form-group input:focus, .form-group select:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
@@ -118,14 +118,22 @@
 
         .login-info h3 {
             color: #667eea;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             font-size: 1em;
         }
 
-        .login-info p {
+        .user-card {
+            background: white;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+        }
+
+        .user-card p {
             color: #666;
             font-size: 0.9em;
-            margin: 5px 0;
+            margin: 3px 0;
         }
 
         .error-message {
@@ -136,6 +144,49 @@
             margin-bottom: 20px;
             border-left: 4px solid #dc3545;
             display: none;
+        }
+
+        /* Connection Status Indicator */
+        .connection-status {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 999;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.disconnected {
+            background: #dc3545;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* User Badge */
+        .user-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.3);
+            padding: 5px 15px;
+            border-radius: 15px;
+            margin-right: 10px;
+            font-size: 0.85em;
         }
 
         /* Attendance Page Styles */
@@ -349,6 +400,12 @@
             transition: all 0.3s;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            position: relative;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         .btn-save {
@@ -356,7 +413,7 @@
             color: white;
         }
 
-        .btn-save:hover {
+        .btn-save:hover:not(:disabled) {
             background: #218838;
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
@@ -395,6 +452,21 @@
             box-shadow: 0 5px 15px rgba(108, 117, 125, 0.3);
         }
 
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         /* Toast Notification */
         .toast {
             position: fixed;
@@ -407,6 +479,7 @@
             display: none;
             z-index: 1000;
             border-left: 5px solid;
+            max-width: 400px;
         }
 
         .toast.show {
@@ -514,6 +587,12 @@
             .login-container {
                 padding: 30px 20px;
             }
+
+            .connection-status {
+                top: 10px;
+                right: 10px;
+                font-size: 0.85em;
+            }
         }
 
         @media (max-width: 480px) {
@@ -529,6 +608,12 @@
     </style>
 </head>
 <body>
+    <!-- Connection Status -->
+    <div id="connectionStatus" class="connection-status" style="display: none;">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">Terhubung ke Cloud</span>
+    </div>
+
     <!-- Toast Notification -->
     <div id="toast" class="toast"></div>
 
@@ -537,15 +622,20 @@
         <div class="login-container">
             <div class="login-header">
                 <h1>🔐 Login</h1>
-                <p>Sistem Absensi Kelas</p>
+                <p>Sistem Absensi Kelas F5</p>
             </div>
 
             <div id="errorMessage" class="error-message"></div>
 
-           <form id="loginForm" onsubmit="handleLogin(event)">
+            <form id="loginForm" onsubmit="handleLogin(event)">
                 <div class="form-group">
-                    <label for="email">Email / Username</label>
-                    <input type="text" id="email" required placeholder="Masukkan email atau username">
+                    <label for="userSelect">Pilih Pengguna</label>
+                    <select id="userSelect" required>
+                        <option value="">-- Pilih Pengguna --</option>
+                        <option value="user1">Ketua - wesleyrafanatanael@gmail.com</option>
+                        <option value="user2">Sekretaris 1 - ernestalily@gmail.com.com</option>
+                        <option value="user3">Sekretaris 2 - roselynvalencia12@gmail.com</option>
+                    </select>
                 </div>
 
                 <div class="form-group">
@@ -555,6 +645,7 @@
 
                 <button type="submit" class="btn-login">Masuk</button>
             </form>
+            </div>
         </div>
     </div>
 
@@ -564,8 +655,11 @@
             <!-- Header -->
             <div class="header">
                 <div class="header-left">
-                    <h1>📋 Sistem Absensi Kelas</h1>
-                    <div class="user-info">Login sebagai: <span id="loggedUser"></span></div>
+                    <h1>📋 Sistem Absensi Kelas F5</h1>
+                    <div class="user-info">
+                        <span class="user-badge" id="userRole"></span>
+                        Login sebagai: <span id="loggedUser"></span>
+                    </div>
                 </div>
                 <div class="date-display" id="currentDate"></div>
                 <button class="btn-logout" onclick="logout()">🚪 Logout</button>
@@ -609,7 +703,9 @@
 
             <!-- Buttons -->
             <div class="button-container">
-                <button class="btn btn-save" onclick="saveAttendance()">💾 Simpan Absensi</button>
+                <button class="btn btn-save" id="btnSave" onclick="saveAttendance()">
+                    💾 Simpan ke Google Sheets
+                </button>
                 <button class="btn btn-reset" onclick="resetToDefault()">🔄 Reset ke Hadir Semua</button>
                 <button class="btn btn-export" onclick="exportToExcel()">📊 Export ke Excel</button>
                 <button class="btn btn-history" onclick="showHistory()">📅 Lihat Riwayat</button>
@@ -634,11 +730,30 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <script>
-        // ===== KONFIGURASI LOGIN =====
-        const CREDENTIALS = {
-            email: "takenbyf5@gmail.com",
-            password: "Pengurusf5"
+        // ===== KONFIGURASI MULTI-USER =====
+        const USERS = {
+            user1: {
+                email: "wesleyrafanatanael@gmail.com",
+                password: "KetuaGacor",
+                role: "Ketua",
+                name: "Ketua Kelas"
+            },
+            user2: {
+                email: "ernestalily@gmail.com",
+                password: "Sekretaris1Gacor",
+                role: "Sekretaris",
+                name: "Sekretaris Kelas"
+            },
+            user3: {
+                email: "roselynvalencia12@gmail.com",
+                password: "Sekretaris2Gacor",
+                role: "Sekretaris",
+                name: "Sekretaris Kelas"
+            }
         };
+
+        // GANTI URL INI dengan URL Google Apps Script Anda
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwJTuxL7bNxJAzPebcktT7DypWws7rYpXjg1-olFBCAxj-JqYE5AWRzS9KqfSn1cM717g/exec";
 
         // ===== DATA SISWA =====
         const students = [
@@ -653,37 +768,54 @@
             "Steven Fernando Wijaya", "Timoses Manuel", "Veronica Kerenza", "Wesley Rafa Natanael"
         ];
 
-            const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx73CltEnUam_9YqeTsSj8Ax9qyx6EkJHVKLazoUqzNG3SqWIr2Tg_57O1dl_PD1sYZSg/exec";
-    e.preventDefault();
-    handleLogin(e);
-});
+        // ===== VARIABEL GLOBAL =====
+        let currentUser = null;
+        let isConnected = false;
 
         // ===== FUNGSI LOGIN =====
-      function handleLogin(event) {
-    event.preventDefault(); // WAJIB supaya tidak reload
+        function handleLogin(event) {
+            event.preventDefault();
+            
+            const userSelect = document.getElementById('userSelect').value;
+            const password = document.getElementById('password').value.trim();
+            const errorMessage = document.getElementById('errorMessage');
 
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value.trim();
-    const errorMessage = document.getElementById('errorMessage');
+            if (!userSelect) {
+                errorMessage.textContent = '❌ Silakan pilih pengguna!';
+                errorMessage.style.display = 'block';
+                setTimeout(() => errorMessage.style.display = 'none', 3000);
+                return;
+            }
 
-    if (
-        email.toLowerCase() === CREDENTIALS.email.toLowerCase() &&
-        password === CREDENTIALS.password
-    ) {
-        localStorage.setItem('isLoggedIn', 'true');
-        showAttendancePage();
-        showToast('Login berhasil!', 'success');
-    } else {
-        errorMessage.textContent = 'Email atau password salah';
-        errorMessage.style.display = 'block';
-    }
-}
+            const userData = USERS[userSelect];
+
+            if (password === userData.password) {
+                currentUser = {
+                    id: userSelect,
+                    email: userData.email,
+                    role: userData.role,
+                    name: userData.name
+                };
+
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                
+                showAttendancePage();
+                showToast(`✅ Selamat datang, ${userData.role}!`, 'success');
+                updateConnectionStatus(true);
+            } else {
+                errorMessage.textContent = '❌ Password salah!';
+                errorMessage.style.display = 'block';
+                setTimeout(() => errorMessage.style.display = 'none', 3000);
+            }
+        }
 
         // ===== FUNGSI LOGOUT =====
         function logout() {
             if (confirm('Apakah Anda yakin ingin keluar?')) {
                 localStorage.removeItem('isLoggedIn');
-                localStorage.removeItem('loggedUser');
+                localStorage.removeItem('currentUser');
+                currentUser = null;
                 showLoginPage();
                 showToast('👋 Anda telah logout.', 'info');
             }
@@ -693,17 +825,35 @@
         function showLoginPage() {
             document.getElementById('loginPage').style.display = 'flex';
             document.getElementById('attendancePage').classList.remove('active');
+            document.getElementById('connectionStatus').style.display = 'none';
         }
 
         function showAttendancePage() {
             document.getElementById('loginPage').style.display = 'none';
             document.getElementById('attendancePage').classList.add('active');
+            document.getElementById('connectionStatus').style.display = 'flex';
             
-            const loggedUser = localStorage.getItem('loggedUser');
-            document.getElementById('loggedUser').textContent = loggedUser;
+            // Update user info
+            document.getElementById('loggedUser').textContent = currentUser.email;
+            document.getElementById('userRole').textContent = currentUser.role;
             
             displayCurrentDate();
             generateStudentTable();
+        }
+
+        // ===== FUNGSI STATUS KONEKSI =====
+        function updateConnectionStatus(connected) {
+            isConnected = connected;
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            
+            if (connected) {
+                dot.classList.remove('disconnected');
+                text.textContent = 'Terhubung ke Cloud';
+            } else {
+                dot.classList.add('disconnected');
+                text.textContent = 'Offline';
+            }
         }
 
         // ===== FUNGSI TANGGAL =====
@@ -748,7 +898,7 @@
                     <td>${index + 1}</td>
                     <td>${name}</td>
                     <td>
-                        <select class="status-select ${status.toLowerCase() === 'h' ? 'hadir' : status.toLowerCase() === 'i' ? 'izin' : status.toLowerCase() === 's' ? 'sakit' : 'alpha'}" 
+                        <select class="status-select ${getStatusClass(status)}" 
                                 data-student="${name}" 
                                 onchange="updateStatus(this)">
                             <option value="H" ${status === 'H' ? 'selected' : ''}>Hadir</option>
@@ -764,16 +914,21 @@
             updateSummary();
         }
 
+        function getStatusClass(status) {
+            const classes = {
+                'H': 'hadir',
+                'I': 'izin',
+                'S': 'sakit',
+                'A': 'alpha'
+            };
+            return classes[status] || 'hadir';
+        }
+
         // ===== FUNGSI UPDATE STATUS =====
         function updateStatus(select) {
             const value = select.value;
             select.classList.remove('hadir', 'izin', 'sakit', 'alpha');
-            
-            if (value === 'H') select.classList.add('hadir');
-            else if (value === 'I') select.classList.add('izin');
-            else if (value === 'S') select.classList.add('sakit');
-            else if (value === 'A') select.classList.add('alpha');
-
+            select.classList.add(getStatusClass(value));
             updateSummary();
         }
 
@@ -796,43 +951,94 @@
             document.getElementById('countAlpha').textContent = countA;
         }
 
-        // ===== FUNGSI SIMPAN ABSENSI =====
-       function saveAttendance() {
-    const todayDate = getTodayDate();
-    const attendanceData = {};
-    const selects = document.querySelectorAll('.status-select');
-
-    selects.forEach(select => {
-        const studentName = select.dataset.student;
-        const status = select.value;
-        attendanceData[studentName] = status;
-
-        // ===== KIRIM KE GOOGLE SHEETS =====
-        fetch(SCRIPT_URL, {
-            method: "POST",
-            body: JSON.stringify({
-                tanggal: todayDate,
-                nama: studentName,
-                status: status
-            }),
-            headers: {
-                "Content-Type": "application/json"
+        // ===== FUNGSI SIMPAN KE GOOGLE SHEETS (MULTI-USER) =====
+        async function saveAttendance() {
+            if (SCRIPT_URL === "https://script.google.com/macros/s/AKfycbwJTuxL7bNxJAzPebcktT7DypWws7rYpXjg1-olFBCAxj-JqYE5AWRzS9KqfSn1cM717g/exec") {
+                showToast('⚠️ Google Apps Script belum dikonfigurasi! Baca PANDUAN-SETUP.txt', 'error');
+                return;
             }
-        });
-    });
 
-    // Tetap simpan lokal
-    localStorage.setItem(`attendance_${todayDate}`, JSON.stringify(attendanceData));
-    saveToHistory(todayDate, attendanceData);
+            const btnSave = document.getElementById('btnSave');
+            const originalText = btnSave.innerHTML;
+            
+            // Disable button dan tampilkan loading
+            btnSave.disabled = true;
+            btnSave.innerHTML = '<span class="spinner"></span> Menyimpan...';
 
-    showToast('☁️ Data tersimpan ke Cloud & Lokal!', 'success');
-}
+            const todayDate = getTodayDate();
+            const timestamp = new Date().toISOString();
+            const selects = document.querySelectorAll('.status-select');
+            const attendanceData = {};
+            const dataArray = [];
+
+            // Kumpulkan semua data
+            selects.forEach(select => {
+                const studentName = select.dataset.student;
+                const status = select.value;
+                attendanceData[studentName] = status;
+                
+                dataArray.push({
+                    timestamp: timestamp,
+                    tanggal: todayDate,
+                    nama: studentName,
+                    status: status,
+                    user: currentUser.email,
+                    role: currentUser.role
+                });
+            });
+
+            try {
+                // Kirim data ke Google Sheets
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'saveAttendance',
+                        data: dataArray,
+                        tanggal: todayDate,
+                        user: currentUser.email,
+                        role: currentUser.role
+                    })
+                });
+
+                // Simpan juga ke LocalStorage sebagai backup
+                localStorage.setItem(`attendance_${todayDate}`, JSON.stringify(attendanceData));
+                saveToHistory(todayDate, attendanceData);
+
+                updateConnectionStatus(true);
+                showToast(`✅ Data berhasil disimpan oleh ${currentUser.role}!`, 'success');
+                
+            } catch (error) {
+                console.error('Error:', error);
+                updateConnectionStatus(false);
+                
+                // Tetap simpan lokal meskipun gagal upload
+                localStorage.setItem(`attendance_${todayDate}`, JSON.stringify(attendanceData));
+                saveToHistory(todayDate, attendanceData);
+                
+                showToast('⚠️ Tersimpan lokal. Cek koneksi untuk sinkronisasi cloud.', 'error');
+            } finally {
+                // Restore button
+                btnSave.disabled = false;
+                btnSave.innerHTML = originalText;
+            }
+        }
+
         // ===== FUNGSI SIMPAN KE HISTORY =====
         function saveToHistory(date, data) {
             let history = localStorage.getItem('attendance_history');
             history = history ? JSON.parse(history) : {};
             
-            history[date] = data;
+            history[date] = {
+                data: data,
+                user: currentUser.email,
+                role: currentUser.role,
+                timestamp: new Date().toISOString()
+            };
+            
             localStorage.setItem('attendance_history', JSON.stringify(history));
         }
 
@@ -874,7 +1080,7 @@
                 const row = [index + 1, student];
                 
                 dates.forEach(date => {
-                    const status = historyData[date][student] || '-';
+                    const status = historyData[date].data[student] || '-';
                     row.push(status);
                 });
                 
@@ -889,7 +1095,7 @@
             XLSX.utils.book_append_sheet(wb, ws, "Absensi");
 
             // Download
-            const fileName = `Absensi_Kelas_${getTodayDate()}.xlsx`;
+            const fileName = `Absensi_Kelas_F5_${getTodayDate()}_${currentUser.role}.xlsx`;
             XLSX.writeFile(wb, fileName);
 
             showToast('📊 File Excel berhasil di-download!', 'success');
@@ -909,7 +1115,8 @@
 
                 let html = '';
                 dates.forEach(date => {
-                    const data = historyData[date];
+                    const record = historyData[date];
+                    const data = record.data;
                     let countH = 0, countI = 0, countS = 0, countA = 0;
 
                     Object.values(data).forEach(status => {
@@ -921,7 +1128,10 @@
 
                     html += `
                         <div style="margin-bottom: 20px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
-                            <h3 style="color: #667eea; margin-bottom: 10px;">📅 ${date}</h3>
+                            <h3 style="color: #667eea; margin-bottom: 5px;">📅 ${date}</h3>
+                            <p style="font-size: 0.85em; color: #666; margin-bottom: 10px;">
+                                Diinput oleh: ${record.role} (${record.user})
+                            </p>
                             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
                                 <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
                                     <strong style="color: #28a745;">Hadir:</strong> ${countH}
@@ -958,14 +1168,16 @@
 
             setTimeout(() => {
                 toast.classList.remove('show');
-            }, 3000);
+            }, 4000);
         }
 
         // ===== INISIALISASI =====
         window.onload = function() {
             const isLoggedIn = localStorage.getItem('isLoggedIn');
+            const savedUser = localStorage.getItem('currentUser');
             
-            if (isLoggedIn === 'true') {
+            if (isLoggedIn === 'true' && savedUser) {
+                currentUser = JSON.parse(savedUser);
                 showAttendancePage();
             } else {
                 showLoginPage();
@@ -979,6 +1191,9 @@
                 closeHistory();
             }
         };
+
+        // Update tanggal setiap menit
+        setInterval(displayCurrentDate, 60000);
     </script>
 </body>
 </html>
