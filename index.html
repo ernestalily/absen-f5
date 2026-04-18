@@ -1006,7 +1006,7 @@
                 showToast(`✅ Data berhasil disimpan oleh ${currentUser.role}!`, 'success');
                 
             } catch (error) {
-                console.error('Error:', error);
+                alert('Error: ' + error.message);
                 updateConnectionStatus(false);
                 
                 // Tetap simpan lokal meskipun gagal upload
