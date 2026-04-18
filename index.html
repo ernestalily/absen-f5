@@ -985,6 +985,7 @@
             try {
                 // Kirim data ke Google Sheets
                 const response = await fetch(SCRIPT_URL, {
+                    mode : 'no-cors',
                     method: 'POST',
                     headers: {
                         'Content-Type': 'text/plain',
